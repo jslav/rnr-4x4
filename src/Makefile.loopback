@@ -1,0 +1,15 @@
+obj-m = v4l2loopback.o
+
+KERNEL_PATH ?=
+
+CROSS_COMPILE ?=
+CC = $(CROSS_COMPILE)gcc
+LD = $(CROSS_COMPILE)ld
+
+all:
+	make -C $(KERNEL_PATH) M=$(PWD) modules ARCH=arm  CROSS_COMPILE=$(CROSS_COMPILE)
+
+clean:
+	rm -f *~
+	rm -f Module.symvers Module.markers modules.order
+	make clean

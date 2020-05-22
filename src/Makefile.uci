@@ -1,0 +1,85 @@
+
+CROSS_COMPILE ?= arm-linux-gnueabihf-
+INSTALL_PATH ?=
+
+CC = $(CROSS_COMPILE)gcc  # C compiler
+AR = $(CROSS_COMPILE)ar
+RANLIB = $(CROSS_COMPILE)ranlib
+CFLAGS = -fPIC -Wall -Wextra -Os  # C flags
+LDFLAGS = -shared # linking flags
+LIBS = -lubox
+UBOXLIB ?=
+UBOXINC ?=
+
+LIBDIR = -L$(UBOXLIB)
+INCDIR = -I$(UBOXINC)
+
+CFLAGS += $(INCDIR)
+
+RM = /bin/rm -f   # rm command
+TARGET_SHARED_LIB = libuci.so  # target lib
+TARGET_STATIC_LIB = libuci.a
+TARGET_APP = uci
+
+UCIMAP_STATIC_LIB = libucimap.a
+
+SRCS = libuci.c file.c util.c delta.c parse.c blob.c
+UCIMAP_SRC = ucimap.c
+
+APP_SRC = cli.c
+       
+OBJS = $(SRCS:.c=.o)
+UCIMAP_OBJ = $(UCIMAP_SRC:.c=.o)
+APP_OBJ = $(APP_SRC:.c=.o)
+
+APP_LDFLAGS = -Wl,-rpath,./: libuci.so -lubox -lrt
+APP_CFLAGS = -DUCI_PREFIX=\"/usr/local\"
+APP_LIBDIR = -L./ $(LIBDIR)
+
+DEPS = $(SRCS:.c=.d) $(UCIMAP_SRC:.c=.d)  $(APP_SRC:.c=.d)
+GSRC = $(SRCS) $(UCIMAP_SRC) $(APP_SRC)
+
+.PHONY: all
+all: ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB} ${UCIMAP_STATIC_LIB} ${TARGET_APP}
+
+$(TARGET_SHARED_LIB): $(OBJS)
+	$(CC) ${LDFLAGS} $(LIBS) -o $@ $^ $(LIBDIR)
+
+$(TARGET_STATIC_LIB): $(OBJS)
+	$(AR) -r -o $@ $^
+	$(RANLIB) $(TARGET_STATIC_LIB)
+	
+$(UCIMAP_STATIC_LIB): $(UCIMAP_OBJ)
+	$(AR) -r -o $@ $^
+	$(RANLIB) $(UCIMAP_STATIC_LIB)
+
+$(TARGET_APP): $(APP_OBJ)
+	$(CC) $(APP_CFLAGS) $(APP_LDFLAGS) -o $@ $^ $(APP_LIBDIR)
+
+$(SRCS:.c=.d):%.d:%.c
+	$(CC) $(CFLAGS) -MM $< >$@
+
+$(UCIMAP_SRC:.c=.d):%.d:%.c
+	$(CC) $(CFLAGS) -MM $< >$@
+	
+$(APP_SRC:.c=.d):%.d:%.c
+	$(CC) $(CFLAGS) -MM $< >$@
+	
+	
+
+
+#install: ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB}
+
+.PHONY: clean
+clean:
+	-${RM} ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB} ${OBJS} \
+	${UCIMAP_OBJ} ${APP_OBJ} ${UCIMAP_STATIC_LIB} ${TARGET_APP} \
+	$(SRCS:.c=.d) $(UCIMAP_SRC:.c=.d)  $(APP_SRC:.c=.d)
+
+.PHONY: dep
+dep: $(DEPS) $(GSRC)
+	@echo "##########################"
+	@echo "### Dependencies built ###"
+	@echo "##########################"
+	
+-include $(DEPS)

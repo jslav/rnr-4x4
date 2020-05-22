@@ -1,0 +1,9 @@
+config rtsp 'rtsp'
+        option proto 'udp'
+        option device '/dev/video0'
+        option format 'YUYV'
+        option port '554'
+        option resolution '640x480'
+        option channel 'live.cam'
+        option framerate '25'
+        

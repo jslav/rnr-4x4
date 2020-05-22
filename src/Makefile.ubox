@@ -1,0 +1,45 @@
+
+CROSS_COMPILE ?= arm-linux-gnueabihf-
+INSTALL_PATH ?=
+
+CC = $(CROSS_COMPILE)gcc  # C compiler
+AR = $(CROSS_COMPILE)ar
+RANLIB = $(CROSS_COMPILE)ranlib
+CFLAGS = -fPIC -Wall -Wextra -Os  # C flags
+LDFLAGS = -shared   # linking flags
+RM = /bin/rm -f   # rm command
+TARGET_SHARED_LIB = libubox.so  # target lib
+TARGET_STATIC_LIB = libubox.a
+
+SRCS = avl.c avl-cmp.c blob.c blobmsg.c uloop.c usock.c ustream.c \
+       ustream-fd.c vlist.c utils.c safe_list.c runqueue.c md5.c kvlist.c ulog.c base64.c
+OBJS = $(SRCS:.c=.o)
+DEPS = $(SRCS:.c=.d)
+
+.PHONY: all
+all: ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB}
+
+$(TARGET_SHARED_LIB): $(OBJS)
+	$(CC) ${LDFLAGS} -o $@ $^
+
+$(TARGET_STATIC_LIB): $(OBJS)
+	$(AR) -r -o $@ $^
+	$(RANLIB) $(TARGET_STATIC_LIB)
+
+$(SRCS:.c=.d):%.d:%.c
+	$(CC) $(CFLAGS) -MM $< >$@
+
+
+#install: ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB}
+
+.PHONY: clean
+clean:
+	-${RM} ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB} ${OBJS} $(SRCS:.c=.d)
+
+.PHONY: dep
+dep: $(DEPS) $(SRCS)
+	@echo "##########################"
+	@echo "### Dependencies built ###"
+	@echo "##########################"
+	
+-include $(DEPS)
