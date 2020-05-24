@@ -1,1 +1,1 @@
-PATH=$PATH:/usr/local/angstrom/armv7linaro/bin/
+PATH=$PATH:/usr/local/arm/gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux/bin/
