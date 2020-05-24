@@ -40,6 +40,8 @@ static unsigned int rtsp_start_en = 0;
     closelog(); \
 }
 
+//#define LOG printf 
+
 void close_all_child(void) {  
     if (ch_pid.pid_server != -1) kill(ch_pid.pid_server, SIGTERM);
     if (ch_pid.pid_capture != -1) kill(ch_pid.pid_capture, SIGTERM);
@@ -159,6 +161,7 @@ pid_t start_capture() {
     char *pformat;
     char *pfps;
     char *pres;
+    char pbuf[512];
 
     memset(src_w, 0, sizeof(src_w));
     memset(src_h, 0, sizeof(src_h));
@@ -173,11 +176,11 @@ pid_t start_capture() {
         fprintf(stderr,"Invalid resolution '%s', must be in the form WxH\n", pres);    
     } 
 
-    LOG("capture start with resolution %s\n", pres);
+    LOG("capture start: -v %s -w %s -h %s -f %s\n", pdev,src_w,src_h,pformat);
     pid = fork();
     if (pid == 0) {     
     // /usr/sbin/capture -v /dev/video0 -w 1280 -h 720 -f YUYV         
-        execl("/usr/sbin/capture", "capture", "-v", pdev, "-w", src_w, "-h", src_h, "-f", pformat,  NULL);
+        execl("/usr/local/bin/capture", "capture", "-v", pdev, "-w", src_w, "-h", src_h, "-f", pformat,  NULL);
         exit(1);
         
     } else {          
@@ -224,7 +227,7 @@ pid_t start_server() {
 
     if (pid == 0) {
         // without auth
-         execl("/usr/sbin/v4l2rtspserver", "v4l2rtspserver", AV_DEVICE, "-W",src_w,"-H",src_h,"-F",pfps, 
+         execl("/usr/local/bin/v4l2rtspserver", "v4l2rtspserver", AV_DEVICE, "-W",src_w,"-H",src_h,"-F",pfps, 
                 "-P", pport, "-u", purl, NULL);
         exit(1);
 
@@ -250,7 +253,7 @@ static void *thread_start_app(void *unused) {
             }
                     
             if (ch_pid.pid_server == -1) {
-                 if (!rtsp_start_en) goto done;
+                if (!rtsp_start_en) goto done;
                 LOG("Starting RTSP\n");
                 ch_pid.pid_server = start_server();
             }
@@ -310,7 +313,8 @@ int main(int argc, char** argv) {
         memset(src_h, 0, sizeof(src_h));
 
         if (parse_video_size(src_w, src_h, pres) < 0) {
-            LOG("Invalid resolution '%s', must be in the form WxH\n", pres);    
+            LOG("Invalid resolution '%s', must be in the form WxH\n", pres); 
+            close(fd);   
             goto run;
         } 
 
@@ -320,6 +324,7 @@ int main(int argc, char** argv) {
 
         if (dev_try_format(fd, w, h, cap_dev_pix_fmt) ) {
             LOG("Input format %s is not supported\n", pformat);
+            close(fd);
             goto run;
         }
         close(fd);

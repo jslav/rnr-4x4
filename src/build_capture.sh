@@ -31,6 +31,6 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-cp h264enc $ROOTDIR/usr/local/bin/capture
+cp capture $ROOTDIR/usr/local/bin
 
 cecho g "!!! capture done !!!\n"

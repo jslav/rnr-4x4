@@ -45,7 +45,7 @@ fi
 
 cd $BUILDDIR
 
-FILES="build_uci.sh build_capture.sh build_svc.sh build_rtspserver.sh build_loopback.sh"
+FILES="build_uci.sh build_capture.sh build_svc.sh build_rtspserver.sh build_kernel.sh build_loopback.sh"
 
 for F in $FILES
 do
@@ -57,7 +57,10 @@ do
 	fi
 done
 
-tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr
+cp $BUILDDIR/modules $BUILDDIR/etc/modules
+
+tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr lib
+cp $BUILDDIR/uImage $OUTPUT
 
 cecho g "Build done for $OUTPUT/rootfs.tar"
 

@@ -11,8 +11,8 @@ config_t rtsp_config[] = {
     {RTSP_FORMAT,       "system.rtsp.format",   "YUYV"},
     {RTSP_COLOR,        "system.rtsp.color",     "1"},
     {RTSP_PORT,         "system.rtsp.port",      "8554"},
-    {RTSP_RESOLUTION,   "system.rtsp.resolution","640x480"},
-    {RTSP_CHANNEL,      "system.rtsp.channel",   "live.cam"},
+    {RTSP_RESOLUTION,   "system.rtsp.resolution","1280x720"},
+    {RTSP_CHANNEL,      "system.rtsp.channel",   "live.cam2"},
     {RTSP_FPS,          "system.rtsp.fps",       "20"},
 };
 

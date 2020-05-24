@@ -58,6 +58,33 @@ int xioctl(int fh, int request, void *arg) {
     return r;
 }
 
+int v4l2_set_input(int *fd) {
+    /*
+     * define video input
+     * vfe_v4l2 the driver is forced to input = -1
+     * set as the input = 0, works fine.
+     */
+    struct v4l2_input input;
+    int count = 0;
+    CLEAR(input);
+    input.index = count;
+    while(!xioctl(*fd, VIDIOC_ENUMINPUT, &input)) {
+        input.index = ++count;
+    }
+    count -= 1;
+    
+    if (count <= -1) {
+        return -1;
+        printf("Failed to set input\n");
+    }
+    
+    if(xioctl(*fd, VIDIOC_S_INPUT, &count) == -1) {
+        printf("Error selecting input %d", count);
+        return -1;
+    }
+    return 0;
+}
+
 /*
  *
  */
@@ -77,10 +104,11 @@ int dev_try_format(int fd, int w, int h, int fmtid) {
     if(fmt.fmt.pix.pixelformat != fmtid) {
         return -1;
     }
-
+/*
     if (xioctl(fd, VIDIOC_S_FMT, &fmt)<0) {
         return -1;
     }
+*/    
     return 0;
 }
 
@@ -136,6 +164,11 @@ int open_capture_dev(char *name, int *fd) {
         fprintf(stderr, "%s does not support streaming i/o\n", name);
         return -1;
     }
+
+    /* otherwise we are not able to set format */
+    if (v4l2_set_input(fd)) {
+        return -1;
+    }  
     return 0;
 }
 

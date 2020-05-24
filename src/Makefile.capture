@@ -6,7 +6,7 @@ CC = $(CROSS_COMPILE)gcc
 CP = /usr/bin/sudo /bin/cp
 DEL = /bin/rm -f
 
-TARGET = h264enc
+TARGET = capture
 
 SRC = main.c \
 	  h264enc.c \
