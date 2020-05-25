@@ -30,6 +30,7 @@ fi
 
 cp -r $KERNEL/build/lib.opi2/* $ROOTDIR/lib
 cp $ROOTDIR/modules.dep $ROOTDIR/lib/modules/3.4.39-02-lobo
+cp $ROOTDIR/modules.dep.bin $ROOTDIR/lib/modules/3.4.39-02-lobo
 cp $KERNEL/build/uImage_OPI-2 $ROOTDIR/uImage
 
 echo "$KERNEL/linux-3.4" > $ROOTDIR/kernel_path

@@ -24,7 +24,7 @@ LIBS =
 MAKEFLAGS += -rR --no-print-directory
 
 DEP_CFLAGS = -MD -MP -MQ $@
-DEFS = -DCPU_HAS_NEON
+DEFS = -DCPU_HAS_NEON -DUSE_ION -DSUNXI_VFE
 
 OBJ = $(addsuffix .o,$(basename $(SRC)))
 DEP = $(addsuffix .d,$(basename $(SRC)))

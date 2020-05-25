@@ -62,6 +62,7 @@ int uci_read_config() {
     for (i = 0;i < RTSP_N_CONFIG;i++) {
         uci_get_value(rtsp_config[i].name, rtsp_config[i].value);
     }
+    return 0;
 }
 
 /*
@@ -73,6 +74,7 @@ int uci_read_config_ext(config_t config[]) {
     for (i = 0;i < RTSP_N_CONFIG;i++) {
         uci_get_value(config[i].name, config[i].value);
     }
+    return 0;
 }
 
 /*

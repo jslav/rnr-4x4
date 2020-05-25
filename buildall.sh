@@ -6,6 +6,8 @@ BUILDDIR=$ROOTDIR/build
 SRCDIR=$ROOTDIR/src
 OUTPUT=$ROOTDIR/output
 TOOLCHAIN=gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux
+UDEVDIR=$BUILDDIR/etc/udev/rules.d 
+LDSODIR=$BUILDDIR/etc/ld.so.conf.d
 
 . $SRCDIR/color
 
@@ -58,6 +60,15 @@ if [ $? -ne 0 ]; then
 fi
 cecho g "ARM toolchain OK"
 
+if [ ! -d $UDEVDIR ]; then
+  mkdir -p $UDEVDIR
+fi
+
+if [ ! -d $LDSODIR ]; then
+  mkdir -p $LDSODIR
+fi
+
+
 cd $BUILDDIR
 
 FILES="build_uci.sh build_capture.sh build_svc.sh build_rtspserver.sh build_kernel.sh build_loopback.sh"
@@ -73,6 +84,9 @@ do
 done
 
 cp $BUILDDIR/modules $BUILDDIR/etc/modules
+cp $BUILDDIR/50-mali.rules $UDEVDIR
+cp $BUILDDIR/usr-local-lib.conf $LDSODIR
+cp $BUILDDIR/rc.local $BUILDDIR/etc
 
 cecho y "Making rootfs..."
 tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr lib
