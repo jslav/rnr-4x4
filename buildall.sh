@@ -8,6 +8,7 @@ OUTPUT=$ROOTDIR/output
 TOOLCHAIN=gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux
 UDEVDIR=$BUILDDIR/etc/udev/rules.d 
 LDSODIR=$BUILDDIR/etc/ld.so.conf.d
+MODPROBEDIR=$BUILDDIR/etc/modprobe.d
 
 . $SRCDIR/color
 
@@ -68,6 +69,9 @@ if [ ! -d $LDSODIR ]; then
   mkdir -p $LDSODIR
 fi
 
+if [ ! -d $MODPROBEDIR ]; then
+  mkdir -p $MODPROBEDIR
+fi
 
 cd $BUILDDIR
 
@@ -87,6 +91,7 @@ cp $BUILDDIR/modules $BUILDDIR/etc/modules
 cp $BUILDDIR/50-mali.rules $UDEVDIR
 cp $BUILDDIR/usr-local-lib.conf $LDSODIR
 cp $BUILDDIR/rc.local $BUILDDIR/etc
+cp $BUILDDIR/gc2035.conf $MODPROBEDIR
 
 cecho y "Making rootfs..."
 tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr lib
