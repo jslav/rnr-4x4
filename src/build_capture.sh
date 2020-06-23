@@ -5,15 +5,17 @@
 
 ROOTDIR=$PWD
 
+PR=$1
+
 cecho y "*** Building capture ***"
 
-CAPTURE=$PWD/uvc_h264_lb_allwinner
+CAPTURE=$PWD/capture
 CROSS_COMPILE=arm-linux-gnueabihf-
 
 if [ -d $CAPTURE ]; then
   make -C $CAPTURE -f Makefile.capture clean
 else
-  git clone https://github.com/uboborov/uvc_h264_lb_allwinner.git
+  git clone https://github.com/uboborov/uvc_h264_lb_allwinner.git capture
   if [ $? -ne 0 ]; then
     cecho r "!!! Failed to clone capture"
     exit 1
@@ -21,6 +23,10 @@ else
 fi
 
 mkdir -p usr/local/bin
+
+if [ $PR != "" ]; then
+  cp pr.c $CAPTURE
+fi
 
 cp Makefile.capture $CAPTURE
 cd $CAPTURE
