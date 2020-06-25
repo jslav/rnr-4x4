@@ -13,6 +13,10 @@ if [ -d $RTSPDIR ]; then
   rm -rf $RTSPDIR/CMakeFiles $RTSPDIR/CMakeCache.txt
 else
   git clone https://github.com/mpromonet/v4l2rtspserver.git
+  cd $RTSPDIR
+  git checkout "1e37de89f8672cc14eea592eb90465b86925b8e8"
+  cd $ROOTDIR
+  
   if [ $? -ne 0 ]; then
     cecho r "!!! Failed to clone RTSP server"
     exit 1
