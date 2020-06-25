@@ -9,6 +9,7 @@ TOOLCHAIN=gcc-linaro-arm-linux-gnueabihf-4.8-2013.07-1_linux
 UDEVDIR=$BUILDDIR/etc/udev/rules.d 
 LDSODIR=$BUILDDIR/etc/ld.so.conf.d
 MODPROBEDIR=$BUILDDIR/etc/modprobe.d
+DEFAULTSDIR=$BUILDDIR/etc/defaults/
 
 . $SRCDIR/color
 
@@ -73,6 +74,10 @@ if [ ! -d $MODPROBEDIR ]; then
   mkdir -p $MODPROBEDIR
 fi
 
+if [ ! -d $DEFAULTSDIR ]; then
+  mkdir -p $DEFAULTSDIR
+fi
+
 cd $BUILDDIR
 
 FILES="build_uci.sh build_capture.sh build_svc.sh build_rtspserver.sh build_kernel.sh build_loopback.sh"
@@ -92,6 +97,7 @@ cp $BUILDDIR/50-mali.rules $UDEVDIR
 cp $BUILDDIR/usr-local-lib.conf $LDSODIR
 cp $BUILDDIR/rc.local $BUILDDIR/etc
 cp $BUILDDIR/gc2035.conf $MODPROBEDIR
+cp $BUILDDIR/irqbalance $DEFAULTSDIR
 
 cecho y "Making rootfs..."
 tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr lib
