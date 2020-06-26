@@ -14,16 +14,17 @@ if [ -d $RTSPDIR ]; then
   rm -rf $RTSPDIR/CMakeFiles $RTSPDIR/CMakeCache.txt
 else
   git clone https://github.com/mpromonet/v4l2rtspserver.git
-  cd $RTSPDIR
-  git checkout "1e37de89f8672cc14eea592eb90465b86925b8e8"
-  cd $ROOTDIR
-  
   if [ $? -ne 0 ]; then
     cecho r "!!! Failed to clone RTSP server"
     exit 1
   fi
-  
   cd $RTSPDIR
+  git checkout "1e37de89f8672cc14eea592eb90465b86925b8e8"
+  if [ $? -ne 0 ]; then
+    cecho r "!!! Failed to checkout RTSP server tag"
+    exit 1
+  fi
+
   git init modules
   git submodule update
   cd $ROOTDIR
@@ -33,7 +34,6 @@ mkdir -p usr/local/bin
 cd $RTSPDIR
 patch -p1 -N --dry-run --silent < $PATCH 2>/dev/null
 if [ $? -eq 0 ]; then
-    #apply the patch
     patch -p1 -N < $PATCH
 fi
 
