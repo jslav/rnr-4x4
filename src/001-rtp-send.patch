@@ -1,0 +1,166 @@
+--- a/live/liveMedia/RTPInterface.cpp
++++ b/live/liveMedia/RTPInterface.cpp
+@@ -23,6 +23,17 @@
+ #include "RTPInterface.hh"
+ #include <GroupsockHelper.hh>
+ #include <stdio.h>
++#include <pthread.h>
++#include <time.h>
++
++#define SEND_LOCK(x)    pthread_mutex_lock((x))
++#define SEND_UNLOCK(x)  pthread_mutex_unlock((x))
++
++pthread_mutex_t send_lck = PTHREAD_MUTEX_INITIALIZER;
++
++#ifndef RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS
++#define RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS 500
++#endif
+ 
+ ////////// Helper Functions - Definition //////////
+ 
+@@ -327,6 +338,7 @@
+ 
+ Boolean RTPInterface::sendRTPorRTCPPacketOverTCP(u_int8_t* packet, unsigned packetSize,
+ 						 int socketNum, unsigned char streamChannelId) {
++  u_int8_t p[4096];
+ #ifdef DEBUG_SEND
+   fprintf(stderr, "sendRTPorRTCPPacketOverTCP: %d bytes over channel %d (socket %d)\n",
+ 	  packetSize, streamChannelId, socketNum); fflush(stderr);
+@@ -342,9 +354,16 @@
+     framingHeader[1] = streamChannelId;
+     framingHeader[2] = (u_int8_t) ((packetSize&0xFF00)>>8);
+     framingHeader[3] = (u_int8_t) (packetSize&0xFF);
+-    if (!sendDataOverTCP(socketNum, framingHeader, 4, False)) break;
++#if 1    
++    memcpy(p, framingHeader, 4);
++    memcpy(p+4, packet, packetSize);
++    if (!sendDataOverTCP(socketNum, p, packetSize+4, /*False*/True)) break;
++#else    
++    if (!sendDataOverTCP(socketNum, framingHeader, 4, /*False*/True)) break;
+ 
+     if (!sendDataOverTCP(socketNum, packet, packetSize, True)) break;
++#endif
++
+ #ifdef DEBUG_SEND
+     fprintf(stderr, "sendRTPorRTCPPacketOverTCP: completed\n"); fflush(stderr);
+ #endif
+@@ -358,14 +377,46 @@
+   return False;
+ }
+ 
+-#ifndef RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS
+-#define RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS 500
+-#endif
++# ifndef MAX
++#  define MAX(x, y) ( ((x)>(y))?(x):(y) )
++# endif
++
++# ifndef MIN
++#  define MIN(x, y) ( ((x)<(y))?(x):(y) )
++# endif
++
++static unsigned long int time_diff(struct timespec *ts1, struct timespec *ts2) {
++    static struct timespec ts;
++    ts.tv_sec = MAX(ts2->tv_sec, ts1->tv_sec) - MIN(ts2->tv_sec, ts1->tv_sec);
++    ts.tv_nsec = MAX(ts2->tv_nsec, ts1->tv_nsec) - MIN(ts2->tv_nsec, ts1->tv_nsec);
++
++    if (ts.tv_sec > 0) {
++        ts.tv_sec--;
++        ts.tv_nsec += 1000000000;
++    }
++
++    return((ts.tv_sec * 1000000000) + ts.tv_nsec);
++}
+ 
+ Boolean RTPInterface::sendDataOverTCP(int socketNum, u_int8_t const* data, unsigned dataSize, Boolean forceSendToSucceed) {
++  //fd_set writeable;
++  int trycount = 30;
++
+   int sendResult = send(socketNum, (char const*)data, dataSize, 0/*flags*/);
++
+   if (sendResult < (int)dataSize) {
++    struct timespec tm[2];
++    struct sockaddr_in addr;
++    char clnt_addr[20];
++    socklen_t addr_size = sizeof(struct sockaddr_in);
++    getpeername(socketNum, (struct sockaddr *)&addr, &addr_size);
++    memset(clnt_addr, 0, sizeof(clnt_addr));
++    strcpy(clnt_addr, inet_ntoa(addr.sin_addr));
++
++    clock_gettime(CLOCK_MONOTONIC, &tm[0]);
++
+     // The TCP send() failed - at least partially.
++    //TRACE_LOG("send failed over TCP 0: sock %d, sent %d, errno %d, ip %s\n",socketNum, sendResult, errno, clnt_addr);
+ 
+     unsigned numBytesSentSoFar = sendResult < 0 ? 0 : (unsigned)sendResult;
+     if (numBytesSentSoFar > 0 || (forceSendToSucceed && envir().getErrno() == EAGAIN)) {
+@@ -376,26 +427,54 @@
+ #ifdef DEBUG_SEND
+       fprintf(stderr, "sendDataOverTCP: resending %d-byte send (blocking)\n", numBytesRemainingToSend); fflush(stderr);
+ #endif
+-      makeSocketBlocking(socketNum, RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS);
+-      sendResult = send(socketNum, (char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend, 0/*flags*/);
+-      if ((unsigned)sendResult != numBytesRemainingToSend) {
+-	// The blocking "send()" failed, or timed out.  In either case, we assume that the
+-	// TCP connection has failed (or is 'hanging' indefinitely), and we stop using it
+-	// (for both RTP and RTP).
+-	// (If we kept using the socket here, the RTP or RTCP packet write would be in an
+-	//  incomplete, inconsistent state.)
++//      makeSocketBlocking(socketNum, RTPINTERFACE_BLOCKING_WRITE_TIMEOUT_MS);
++      do {
++          usleep(200000);
++          sendResult = send(socketNum, (char const*)(&data[numBytesSentSoFar]), numBytesRemainingToSend, 0/*flags*/); 
++          numBytesSentSoFar += sendResult < 0 ? 0 : (unsigned)sendResult;
++
++          if ((unsigned)sendResult != numBytesRemainingToSend) {
++            	// The blocking "send()" failed, or timed out.  In either case, we assume that the
++            	// TCP connection has failed (or is 'hanging' indefinitely), and we stop using it
++            	// (for both RTP and RTP).
++            	// (If we kept using the socket here, the RTP or RTCP packet write would be in an
++            	//  incomplete, inconsistent state.)
++              //TRACE_LOG("send failed over TCP 1: sock %d, errno %d, ip %s\n",socketNum, errno, clnt_addr);
+ #ifdef DEBUG_SEND
+-	fprintf(stderr, "sendDataOverTCP: blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
+-#endif
+-	removeStreamSocket(socketNum, 0xFF);
+-	return False;
++            	fprintf(stderr, "sendDataOverTCP: blocking send() failed (delivering %d bytes out of %d); closing socket %d\n", sendResult, numBytesRemainingToSend, socketNum); fflush(stderr);
++#endif
++
++              numBytesRemainingToSend = dataSize - numBytesSentSoFar;
++              //makeSocketNonBlocking(socketNum);
++              //usleep(100000);
++              //return True;
++            	//removeStreamSocket(socketNum, 0xFF);
++            	//return False;
++          } else {
++            // we just sent all data
++            break;
++          }
++          trycount--;
++      } while (trycount);
++
++      if (trycount > 0) {
++        int dt_ms;
++        clock_gettime(CLOCK_MONOTONIC, &tm[1]);
++
++        dt_ms = (time_diff(&tm[0], &tm[1])) / 1000000;
++        //TRACE_LOG("send OK after failed in %d ms over TCP: sock %d, ip %s\n",dt_ms, socketNum, clnt_addr);
++  //      makeSocketNonBlocking(socketNum);
++        return True;
+       }
+-      makeSocketNonBlocking(socketNum);
+-
+-      return True;
++      // send failed even after some seconds... close socket and return false
++      //TRACE_LOG("send failed completely over TCP after 30 tries: sock %d\n",socketNum);
++      removeStreamSocket(socketNum, 0xFF);
++      return False;
++
+     } else if (sendResult < 0 && envir().getErrno() != EAGAIN) {
+       // Because the "send()" call failed, assume that the socket is now unusable, so stop
+       // using it (for both RTP and RTCP):
++      //TRACE_LOG("send failed over TCP 2: sock %d, errno %d\n",socketNum, errno);
+       removeStreamSocket(socketNum, 0xFF);
+     }
+ 

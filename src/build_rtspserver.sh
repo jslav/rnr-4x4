@@ -5,6 +5,7 @@
 
 ROOTDIR=$PWD
 RTSPDIR=$ROOTDIR/v4l2rtspserver
+PATCH=$ROOTDIR/001-rtp-send.patch
 
 cecho y "*** Building v4l2rtspserver ***"
 
@@ -17,13 +18,20 @@ else
     cecho r "!!! Failed to clone RTSP server"
     exit 1
   fi
+  
+  cd $RTSPDIR
+  git init modules
+  git submodule update
+  cd $ROOTDIR
 fi
 
 mkdir -p usr/local/bin
-
 cd $RTSPDIR
-git init modules
-git submodule update
+patch -p1 -N --dry-run --silent < $PATCH 2>/dev/null
+if [ $? -eq 0 ]; then
+    #apply the patch
+    patch -p1 -N < $PATCH
+fi
 
 cmake -DCMAKE_TOOLCHAIN_FILE=raspberry.toolchain .
 if [ $? -ne 0 ]; then
