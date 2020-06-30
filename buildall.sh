@@ -1,5 +1,7 @@
 #!/bin/sh
 
+VMODULE=$1
+
 ROOTDIR=$PWD
 
 BUILDDIR=$ROOTDIR/build
@@ -97,7 +99,21 @@ cp $BUILDDIR/50-mali.rules $UDEVDIR
 cp $BUILDDIR/usr-local-lib.conf $LDSODIR
 cp $BUILDDIR/rc.local $BUILDDIR/etc
 cp $BUILDDIR/gc2035.conf $MODPROBEDIR
+cp $BUILDDIR/ov5640.conf $MODPROBEDIR
 cp $BUILDDIR/irqbalance $DEFAULTSDIR
+
+if [ "$VMODULE" = "ov5640" ]; then
+    fex2bin $BUILDDIR/script_ov5640.fex script.bin
+else
+    fex2bin $BUILDDIR/script_gc2035.fex script.bin
+fi
+
+if [ $? -ne 0 ]; then
+  cecho r "!!! Can't make script.bin"
+  exit 1
+fi
+
+mv script.bin $OUTPUT
 
 cecho y "Making rootfs..."
 tar -cf $OUTPUT/rootfs.tar -C $BUILDDIR etc usr lib

@@ -14,4 +14,5 @@ mali_drm
 8189es
 gpio-sunxi
 gc2035
+ov5640
 vfe_v4l2
