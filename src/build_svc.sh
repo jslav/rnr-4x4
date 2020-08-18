@@ -3,12 +3,15 @@
 . ./toolchain_path
 . ./color
 
+P=$(cat ./toolchain_path)
+PP=$(echo $P | sed 's/.*://')
+CROSS_COMPILE=$PP/arm-linux-gnueabihf-
+
 ROOTDIR=$PWD
 
 cecho y "*** Building supervisor ***"
 
 SVC=$PWD/supervisor
-CROSS_COMPILE=arm-linux-gnueabihf-
 
 if [ -d $SVC ]; then
   make -C $SVC -f Makefile.svc clean
@@ -22,7 +25,7 @@ mkdir -p usr/local/bin
 cp Makefile.svc $SVC
 cd $SVC
 
-make CROSS_COMPILE=arm-linux-gnueabihf- UCI_INC=$ROOTDIR/usr/local/include \
+make CROSS_COMPILE=$CROSS_COMPILE UCI_INC=$ROOTDIR/usr/local/include \
      UBOX_INC=$ROOTDIR/usr/local/include/libubox UCI_LIB=$ROOTDIR/usr/local/lib -f Makefile.svc
 if [ $? -ne 0 ]; then
   cecho r "!!! Failed to build capture"
