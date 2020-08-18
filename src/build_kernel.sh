@@ -3,10 +3,14 @@
 . ./toolchain_path
 . ./color
 
+P=$(cat ./toolchain_path)
+PP=$(echo $P | sed 's/.*://')
+CROSS_COMPILE=$PP/arm-linux-gnueabihf-
+
+
 ROOTDIR=$PWD
 KERNEL=$ROOTDIR/orangepi-loboris-kernel-3.4.39
 
-CROSS_COMPILE=arm-linux-gnueabihf-
 
 cecho y "*** Building linux kernel 3.4.39 ***"
 
@@ -20,6 +24,7 @@ fi
 
 mkdir -p $ROOTDIR/lib
 cp $ROOTDIR/build_linux_kernel.sh $KERNEL
+cp ./toolchain_path $KERNEL
 
 cd $KERNEL
 ./build_linux_kernel.sh

@@ -32,9 +32,9 @@ OBJS = $(SRCS:.c=.o)
 UCIMAP_OBJ = $(UCIMAP_SRC:.c=.o)
 APP_OBJ = $(APP_SRC:.c=.o)
 
-APP_LDFLAGS = -Wl,-rpath,./: libuci.so -lubox -lrt
+APP_LDFLAGS = -Wl,-rpath=. libuci.so -lubox -lrt
 APP_CFLAGS = -DUCI_PREFIX=\"/usr/local\"
-APP_LIBDIR = -L./ $(LIBDIR)
+APP_LIBDIR = $(LIBDIR)
 
 DEPS = $(SRCS:.c=.d) $(UCIMAP_SRC:.c=.d)  $(APP_SRC:.c=.d)
 GSRC = $(SRCS) $(UCIMAP_SRC) $(APP_SRC)
@@ -43,7 +43,7 @@ GSRC = $(SRCS) $(UCIMAP_SRC) $(APP_SRC)
 all: ${TARGET_SHARED_LIB} ${TARGET_STATIC_LIB} ${UCIMAP_STATIC_LIB} ${TARGET_APP}
 
 $(TARGET_SHARED_LIB): $(OBJS)
-	$(CC) ${LDFLAGS} $(LIBS) -o $@ $^ $(LIBDIR)
+	$(CC) ${LDFLAGS} $(LIBS) -o $@ $^ $(LIBDIR) -Wl,-rpath=$(UBOXLIB)
 
 $(TARGET_STATIC_LIB): $(OBJS)
 	$(AR) -r -o $@ $^
@@ -54,7 +54,7 @@ $(UCIMAP_STATIC_LIB): $(UCIMAP_OBJ)
 	$(RANLIB) $(UCIMAP_STATIC_LIB)
 
 $(TARGET_APP): $(APP_OBJ)
-	$(CC) $(APP_CFLAGS) $(APP_LDFLAGS) -o $@ $^ $(APP_LIBDIR)
+	$(CC) $(APP_CFLAGS) $(APP_LDFLAGS) -o $@ $^ $(APP_LIBDIR) -Wl,-rpath=$(UBOXLIB)
 
 $(SRCS:.c=.d):%.d:%.c
 	$(CC) $(CFLAGS) -MM $< >$@

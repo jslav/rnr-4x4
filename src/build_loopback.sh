@@ -3,6 +3,10 @@
 . ./toolchain_path
 . ./color
 
+P=$(cat ./toolchain_path)
+PP=$(echo $P | sed 's/.*://')
+CROSS_COMPILE=$PP/arm-linux-gnueabihf-
+
 ROOTDIR=$PWD
 
 cecho y "*** Building v4l2loopback ***"
@@ -10,7 +14,6 @@ cecho y "*** Building v4l2loopback ***"
 KPATH_FILE=$ROOTDIR/kernel_path
 KERNEL=$(cat "$KPATH_FILE") 
 LOOPBACK=$PWD/v4l2loopback
-CROSS_COMPILE=arm-linux-gnueabihf-
 
 if [ -d $LOOPBACK ]; then
   make -C $LOOPBACK -f Makefile.loopback clean
@@ -27,7 +30,7 @@ mkdir -p usr/lib
 cp Makefile.loopback $LOOPBACK
 cd $LOOPBACK
 
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- KERNEL_PATH=$KERNEL -f Makefile.loopback
+make ARCH=arm CROSS_COMPILE=$CROSS_COMPILE KERNEL_PATH=$KERNEL -f Makefile.loopback
 if [ $? -ne 0 ]; then
   cecho r "!!! Failed to build loopback driver"
   exit 1

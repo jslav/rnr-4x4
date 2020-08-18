@@ -15,7 +15,13 @@
 #export PATH="$PWD/brandy/gcc-linaro/bin":"$PATH"
 #export PATH=$PATH:/usr/local/angstrom/armv7linaro/bin/
 . ../toolchain_path
-cross_comp="arm-linux-gnueabihf"
+
+P=$(cat ./toolchain_path)
+PP=$(echo $P | sed 's/.*://')
+CROSS_COMPILE=$PP/arm-linux-gnueabihf
+
+
+cross_comp="$CROSS_COMPILE"
 
 # ##############
 # Prepare rootfs
