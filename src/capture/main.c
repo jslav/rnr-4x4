@@ -143,7 +143,7 @@ unsigned int fmt_to_bpp(unsigned int pixelformat) {
             //case V4L2_PIX_FMT_BGRA32:
             case V4L2_PIX_FMT_RGB32:
             //case V4L2_PIX_FMT_RGBA32:
-            case V4L2_PIX_FMT_ABGR32:
+            //case V4L2_PIX_FMT_ABGR32:
                     bpp = 32;
                     break;
             /*non-interleaved 420*/
